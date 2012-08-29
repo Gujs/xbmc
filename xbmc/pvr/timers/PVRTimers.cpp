@@ -697,8 +697,7 @@ CDateTime CPVRTimers::GetNextEventTime(void) const
   const CDateTimeSpan prewakeup(0, 0, g_guiSettings.GetInt("pvrpowermanagement.prewakeup"), 0);
   const CDateTimeSpan idle(0, 0, g_guiSettings.GetInt("pvrpowermanagement.backendidletime"), 0);
 
-  CDateTime timerwakeuptime;
-  CDateTime dailywakeuptime;
+  CDateTime retVal;
 
   /* Check next active time */
   CPVRTimerInfoTag timer;
@@ -707,15 +706,16 @@ CDateTime CPVRTimers::GetNextEventTime(void) const
     const CDateTime start = timer.StartAsUTC();
 
     if ((start - idle) > now) {
-      timerwakeuptime = start - prewakeup;
+      retVal = start - prewakeup;
     } else {
-      timerwakeuptime = now + idle;
+      retVal = now + idle;
     }
   }
 
   /* check daily wake up */
   if (dailywakup)
   {
+    CDateTime dailywakeuptime;
     dailywakeuptime.SetFromDBTime(g_guiSettings.GetString("pvrpowermanagement.dailywakeuptime", false));
     dailywakeuptime = dailywakeuptime.GetAsUTCDateTime();
 
@@ -729,8 +729,9 @@ CDateTime CPVRTimers::GetNextEventTime(void) const
       const CDateTimeSpan oneDay(1,0,0,0);
       dailywakeuptime += oneDay;
     }
+    if (dailywakeuptime < retVal)
+      retVal = dailywakeuptime;
   }
 
-  const CDateTime retVal((dailywakeuptime < timerwakeuptime) ? dailywakeuptime : timerwakeuptime);
   return retVal;
 }
