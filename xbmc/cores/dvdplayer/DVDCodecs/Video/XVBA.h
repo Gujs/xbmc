@@ -33,7 +33,6 @@
 #include "libavcodec/xvba.h"
 #include "utils/ActorProtocol.h"
 #include "settings/VideoSettings.h"
-#include <GL/gl.h>
 #include <GL/glx.h>
 #include <vector>
 #include <deque>
@@ -145,7 +144,6 @@ public:
   CDecoder *xvba;
   CXvbaRenderPicture* Acquire();
   long Release();
-  void Transfer();
 private:
   void ReturnUnused();
   int refCount;
@@ -227,7 +225,6 @@ public:
   virtual ~COutput();
   void Start();
   void Dispose();
-  void TransferSurface(uint32_t source);
   COutputControlProtocol m_controlPort;
   COutputDataProtocol m_dataPort;
 protected:
@@ -248,7 +245,7 @@ protected:
   bool CreateGlxContext();
   bool DestroyGlxContext();
   bool EnsureBufferPool();
-  void ReleaseBufferPool();
+  void ReleaseBufferPool(bool precleanup = false);
   void PreReleaseBufferPool();
   CEvent m_outMsgEvent;
   CEvent *m_inMsgEvent;
@@ -266,6 +263,7 @@ protected:
   GLXWindow m_glWindow;
   Pixmap    m_pixmap;
   GLXPixmap m_glPixmap;
+  GLsync m_fence;
   std::queue<CXvbaDecodedPicture> m_decodedPics;
   CXvbaDecodedPicture m_processPicture;
   XVBA_SURFACE_FLAG m_field;
@@ -339,7 +337,7 @@ public:
 
 protected:
   bool CreateSession(AVCodecContext* avctx);
-  void DestroySession();
+  void DestroySession(bool precleanup = false);
   bool EnsureDataControlBuffers(unsigned int num);
   void ResetState();
   void SetError(const char* function, const char* msg, int line);
@@ -371,8 +369,6 @@ protected:
     std::vector<XVBABufferDescriptor*> data_control_buffers;
   };
   XVBABufferPool m_xvbaBufferPool;
-
-  pictureAge picAge;
 
   COutput       m_xvbaOutput;
   CXvbaBufferStats m_bufferStats;
